@@ -81,28 +81,6 @@ export default function AuthPage() {
           </div>
         </div>
 
-        <div className="relative z-10">
-          {/* Fake notebook cards */}
-          <div className="space-y-3">
-            {[
-              { icon: '📓', title: 'Catatan Harian', count: 24 },
-              { icon: '💡', title: 'Ide & Inspirasi', count: 8 },
-              { icon: '📋', title: 'Tugas Minggu Ini', count: 12 },
-            ].map((item, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 bg-ink-800 rounded-lg px-4 py-3"
-                style={{ animationDelay: `${i * 0.1}s` }}
-              >
-                <span className="text-xl">{item.icon}</span>
-                <div className="flex-1">
-                  <div className="text-paper-200 text-sm font-medium">{item.title}</div>
-                  <div className="text-ink-400 text-xs">{item.count} catatan</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Right panel - form */}
