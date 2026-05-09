@@ -54,6 +54,7 @@ export default function NoteEditor({ note, notebook }: Props) {
     await supabase.from('notes').update({ title, content, is_pinned: isPinned }).eq('id', note.id)
     setSaving(false)
     setSaved(true)
+    router.refresh()
     setTimeout(() => setSaved(false), 2000)
   }
 
