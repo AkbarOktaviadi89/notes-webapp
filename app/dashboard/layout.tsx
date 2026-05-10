@@ -8,17 +8,14 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const [{ data: { user } }, { data: notebooks }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.from('notebooks').select('*').order('created_at', { ascending: true }),
+  ])
 
   if (!user) {
     redirect('/auth')
   }
-
-  // Get notebooks
-  const { data: notebooks } = await supabase
-    .from('notebooks')
-    .select('*')
-    .order('created_at', { ascending: true })
 
   return (
     <div className="flex h-screen overflow-hidden bg-paper-100">
