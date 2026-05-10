@@ -185,7 +185,6 @@ export default function NoteEditor({ note, notebook }: Props) {
     await supabase.from('notes').update({ title, content, is_pinned: isPinned }).eq('id', note.id)
     setSaving(false)
     setSaved(true)
-    router.refresh()
     setTimeout(() => setSaved(false), 2000)
   }
 
@@ -262,6 +261,7 @@ export default function NoteEditor({ note, notebook }: Props) {
       <div className="border-b border-paper-300 bg-paper-50 px-4 py-3 flex items-center gap-3">
         <Link
           href={`/dashboard/notebook/${notebook.id}`}
+          onClick={() => router.refresh()}
           className="btn-ghost p-1.5 flex items-center gap-1.5 text-sm"
         >
           <ArrowLeft size={14} />
