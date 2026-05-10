@@ -1,5 +1,5 @@
 -- =============================================
--- NOTAKU - Database Schema
+-- SevNotes - Database Schema
 -- Jalankan script ini di Supabase SQL Editor
 -- =============================================
 
@@ -115,22 +115,22 @@ create policy "Users can delete own tasks"
 -- =============================================
 -- STORAGE BUCKET
 -- =============================================
--- Buat bucket "notaku-files" di Supabase Storage Dashboard
+-- Buat bucket "SevNotes-files" di Supabase Storage Dashboard
 -- Lalu jalankan policy berikut:
 
-insert into storage.buckets (id, name, public) values ('notaku-files', 'notaku-files', false);
+insert into storage.buckets (id, name, public) values ('SevNotes-files', 'SevNotes-files', false);
 
 create policy "Users can upload own files"
   on storage.objects for insert
-  with check (bucket_id = 'notaku-files' and auth.uid()::text = (storage.foldername(name))[1]);
+  with check (bucket_id = 'SevNotes-files' and auth.uid()::text = (storage.foldername(name))[1]);
 
 create policy "Users can view own files"
   on storage.objects for select
-  using (bucket_id = 'notaku-files' and auth.uid()::text = (storage.foldername(name))[1]);
+  using (bucket_id = 'SevNotes-files' and auth.uid()::text = (storage.foldername(name))[1]);
 
 create policy "Users can delete own files"
   on storage.objects for delete
-  using (bucket_id = 'notaku-files' and auth.uid()::text = (storage.foldername(name))[1]);
+  using (bucket_id = 'SevNotes-files' and auth.uid()::text = (storage.foldername(name))[1]);
 
 -- =============================================
 -- FUNCTIONS: auto update updated_at

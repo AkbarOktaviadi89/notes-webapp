@@ -22,7 +22,7 @@ const jetbrains = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Notaku — Catatan Pribadimu',
+  title: 'SevNotes — Catatan Pribadimu',
   description: 'Simpan catatan, file, dan kelola tugasmu dengan rapi',
 }
 

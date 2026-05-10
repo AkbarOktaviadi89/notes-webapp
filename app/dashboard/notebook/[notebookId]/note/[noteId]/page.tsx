@@ -24,7 +24,7 @@ export default async function NotePage({
   const attachments = await Promise.all(
     (note.note_attachments || []).map(async (att: any) => {
       const { data } = await supabase.storage
-        .from('notaku-files')
+        .from('SevNotes-files')
         .createSignedUrl(att.file_path, 3600)
       return { ...att, url: data?.signedUrl }
     })

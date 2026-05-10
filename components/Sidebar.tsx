@@ -66,7 +66,7 @@ export default function Sidebar({ user, notebooks: initialNotebooks }: SidebarPr
         <div className="w-8 h-8 bg-ink-900 rounded flex items-center justify-center flex-shrink-0">
           <BookOpen size={16} className="text-paper-100" />
         </div>
-        <span className="font-display text-xl text-ink-900">Notaku</span>
+        <span className="font-display text-xl text-ink-900">SevNotes</span>
         <button
           className="ml-auto lg:hidden text-ink-400 hover:text-ink-700"
           onClick={() => setMobileOpen(false)}

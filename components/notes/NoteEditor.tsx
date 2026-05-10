@@ -212,7 +212,7 @@ export default function NoteEditor({ note, notebook }: Props) {
       const filePath = `${user!.id}/${note.id}/${fileName}`
 
       const { error: uploadError } = await supabase.storage
-        .from('notaku-files')
+        .from('SevNotes-files')
         .upload(filePath, file)
 
       if (!uploadError) {
@@ -231,7 +231,7 @@ export default function NoteEditor({ note, notebook }: Props) {
 
         if (att) {
           const { data: signedData } = await supabase.storage
-            .from('notaku-files')
+            .from('SevNotes-files')
             .createSignedUrl(filePath, 3600)
           setAttachments(prev => [...prev, { ...att, url: signedData?.signedUrl }])
         }
@@ -243,7 +243,7 @@ export default function NoteEditor({ note, notebook }: Props) {
 
   const handleDeleteAttachment = async (att: NoteAttachment) => {
     if (!confirm('Hapus lampiran ini?')) return
-    await supabase.storage.from('notaku-files').remove([att.file_path])
+    await supabase.storage.from('SevNotes-files').remove([att.file_path])
     await supabase.from('note_attachments').delete().eq('id', att.id)
     setAttachments(prev => prev.filter(a => a.id !== att.id))
   }

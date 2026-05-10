@@ -67,7 +67,7 @@ export default function AuthPage() {
             <div className="w-10 h-10 bg-paper-200 rounded flex items-center justify-center">
               <BookOpen size={20} className="text-ink-900" />
             </div>
-            <span className="font-display text-2xl text-paper-100 tracking-wide">Notaku</span>
+            <span className="font-display text-2xl text-paper-100 tracking-wide">SevNotes</span>
           </div>
 
           <div className="mb-auto">
@@ -91,7 +91,7 @@ export default function AuthPage() {
             <div className="w-8 h-8 bg-ink-900 rounded flex items-center justify-center">
               <BookOpen size={16} className="text-paper-100" />
             </div>
-            <span className="font-display text-xl text-ink-900">Notaku</span>
+            <span className="font-display text-xl text-ink-900">SevNotes</span>
           </div>
 
           <div className="mb-8">

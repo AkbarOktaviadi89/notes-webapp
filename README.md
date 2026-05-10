@@ -1,4 +1,4 @@
-# 📓 Notaku — Aplikasi Catatan Pribadi
+# 📓 SevNotes — Aplikasi Catatan Pribadi
 
 Aplikasi catatan modern dengan notebook, lampiran file/gambar, dan checklist tugas. Dibangun dengan Next.js 14, Supabase, dan di-deploy ke Vercel.
 
@@ -27,7 +27,7 @@ Aplikasi catatan modern dengan notebook, lampiran file/gambar, dan checklist tug
 
 ```bash
 # Clone / extract project
-cd notaku
+cd SevNotes
 
 # Install dependencies
 npm install
@@ -40,7 +40,7 @@ Edit `.env.local`:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxxxxx...
-NEXT_PUBLIC_STORAGE_BUCKET=notaku-files
+NEXT_PUBLIC_STORAGE_BUCKET=SevNotes-files
 ```
 
 ```bash
@@ -64,7 +64,7 @@ Buka [http://localhost:3000](http://localhost:3000)
 ## 🗂️ Struktur Project
 
 ```
-notaku/
+SevNotes/
 ├── app/
 │   ├── auth/page.tsx          # Halaman login & register
 │   ├── dashboard/
