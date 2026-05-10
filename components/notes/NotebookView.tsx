@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Note, Notebook } from '@/types'
@@ -12,21 +12,83 @@ import Link from 'next/link'
 type SortOption = 'newest' | 'oldest' | 'az' | 'za'
 
 interface Props {
-  notebook: Notebook
-  initialNotes: Note[]
+  notebookId: string
 }
 
 const stripHtml = (html: string) => html.replace(/<[^>]*>/g, '')
 
-export default function NotebookView({ notebook, initialNotes }: Props) {
-  const [notes, setNotes] = useState(initialNotes)
+function Skeleton({ className = '' }: { className?: string }) {
+  return <div className={`bg-paper-200 rounded-md animate-pulse ${className}`} />
+}
+
+function NotebookSkeleton() {
+  return (
+    <div className="h-full flex flex-col">
+      <div className="border-b border-paper-300 px-6 py-5 bg-paper-50">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-3">
+            <Skeleton className="w-10 h-10 rounded-lg flex-shrink-0" />
+            <div>
+              <Skeleton className="h-7 w-48 mb-1.5" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          </div>
+          <Skeleton className="h-9 w-32 rounded-md" />
+        </div>
+        <Skeleton className="h-9 w-full mt-4" />
+      </div>
+      <div className="flex-1 p-6">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="paper-card-plain p-4">
+              <Skeleton className="h-4 w-3/4 mb-2" />
+              <Skeleton className="h-3 w-full mb-1.5" />
+              <Skeleton className="h-3 w-5/6 mb-4" />
+              <div className="border-t border-paper-200 pt-3">
+                <Skeleton className="h-3 w-24" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function NotebookView({ notebookId }: Props) {
+  const [notebook, setNotebook] = useState<Notebook | null>(null)
+  const [notes, setNotes] = useState<Note[]>([])
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<SortOption>('newest')
   const [creating, setCreating] = useState(false)
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useRef(createClient()).current
+
+  useEffect(() => {
+    setLoading(true)
+    let cancelled = false
+
+    async function load() {
+      const [{ data: nb }, { data: ns }] = await Promise.all([
+        supabase.from('notebooks').select('*').eq('id', notebookId).single(),
+        supabase.from('notes')
+          .select('*, note_attachments(count)')
+          .eq('notebook_id', notebookId),
+      ])
+      if (cancelled) return
+      if (!nb) { router.push('/dashboard'); return }
+      setNotebook(nb)
+      setNotes(ns || [])
+      setLoading(false)
+    }
+
+    load()
+    return () => { cancelled = true }
+  }, [notebookId])
 
   const sortedFiltered = useMemo(() => {
+    if (!notes.length) return []
     const filtered = notes.filter((n) =>
       n.title.toLowerCase().includes(search.toLowerCase()) ||
       stripHtml(n.content).toLowerCase().includes(search.toLowerCase())
@@ -44,23 +106,16 @@ export default function NotebookView({ notebook, initialNotes }: Props) {
   }, [notes, search, sort])
 
   const createNote = async () => {
+    if (!notebook) return
     setCreating(true)
     const { data: { user } } = await supabase.auth.getUser()
     const { data } = await supabase
       .from('notes')
-      .insert({
-        notebook_id: notebook.id,
-        user_id: user!.id,
-        title: 'Catatan Baru',
-        content: '',
-      })
+      .insert({ notebook_id: notebookId, user_id: user!.id, title: 'Catatan Baru', content: '' })
       .select()
       .single()
-
     setCreating(false)
-    if (data) {
-      router.push(`/dashboard/notebook/${notebook.id}/note/${data.id}`)
-    }
+    if (data) router.push(`/dashboard/notebook/${notebookId}/note/${data.id}`)
   }
 
   const deleteNote = async (noteId: string, e: React.MouseEvent) => {
@@ -71,11 +126,10 @@ export default function NotebookView({ notebook, initialNotes }: Props) {
     setNotes(prev => prev.filter(n => n.id !== noteId))
   }
 
+  if (loading || !notebook) return <NotebookSkeleton />
+
   const sortLabels: Record<SortOption, string> = {
-    newest: 'Terbaru',
-    oldest: 'Terlama',
-    az: 'A–Z',
-    za: 'Z–A',
+    newest: 'Terbaru', oldest: 'Terlama', az: 'A–Z', za: 'Z–A',
   }
 
   return (
@@ -146,7 +200,7 @@ export default function NotebookView({ notebook, initialNotes }: Props) {
             {sortedFiltered.map((note, i) => (
               <Link
                 key={note.id}
-                href={`/dashboard/notebook/${notebook.id}/note/${note.id}`}
+                href={`/dashboard/notebook/${notebookId}/note/${note.id}`}
                 className="paper-card-plain p-4 hover:border-ink-200 hover:shadow-md transition-all group relative animate-slide-up"
                 style={{ animationDelay: `${i * 0.04}s` }}
               >
