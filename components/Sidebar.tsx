@@ -1,15 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   BookOpen, CheckSquare, LayoutDashboard, Plus, LogOut,
-  ChevronRight, Settings, X, Menu
+  ChevronRight, X, Menu, Search
 } from 'lucide-react'
 import { Notebook } from '@/types'
 import CreateNotebookModal from './notes/CreateNotebookModal'
+import GlobalSearch from './GlobalSearch'
 import { User } from '@supabase/supabase-js'
 import clsx from 'clsx'
 
@@ -22,9 +23,21 @@ export default function Sidebar({ user, notebooks: initialNotebooks }: SidebarPr
   const [notebooks, setNotebooks] = useState(initialNotebooks)
   const [showCreate, setShowCreate] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchOpen(true)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -59,6 +72,18 @@ export default function Sidebar({ user, notebooks: initialNotebooks }: SidebarPr
           onClick={() => setMobileOpen(false)}
         >
           <X size={20} />
+        </button>
+      </div>
+
+      {/* Search button */}
+      <div className="px-3 pt-3">
+        <button
+          onClick={() => { setSearchOpen(true); setMobileOpen(false) }}
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md bg-paper-100 border border-paper-300 text-ink-400 text-sm hover:border-ink-300 hover:text-ink-600 transition-colors"
+        >
+          <Search size={14} />
+          <span className="flex-1 text-left">Cari catatan...</span>
+          <kbd className="hidden sm:inline text-xs font-mono bg-paper-200 px-1.5 py-0.5 rounded border border-paper-300 text-ink-300">⌃K</kbd>
         </button>
       </div>
 
@@ -194,6 +219,9 @@ export default function Sidebar({ user, notebooks: initialNotebooks }: SidebarPr
           onCreated={handleNotebookCreated}
         />
       )}
+
+      {/* Global Search */}
+      <GlobalSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   )
 }

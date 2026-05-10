@@ -1,30 +1,47 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Note, Notebook } from '@/types'
-import { Plus, Search, Pin, FileText, Paperclip, Trash2, Loader2, MoreVertical } from 'lucide-react'
+import { Plus, Search, Pin, FileText, Paperclip, Trash2, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 import Link from 'next/link'
+
+type SortOption = 'newest' | 'oldest' | 'az' | 'za'
 
 interface Props {
   notebook: Notebook
   initialNotes: Note[]
 }
 
+const stripHtml = (html: string) => html.replace(/<[^>]*>/g, '')
+
 export default function NotebookView({ notebook, initialNotes }: Props) {
   const [notes, setNotes] = useState(initialNotes)
   const [search, setSearch] = useState('')
+  const [sort, setSort] = useState<SortOption>('newest')
   const [creating, setCreating] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
-  const filtered = notes.filter((n) =>
-    n.title.toLowerCase().includes(search.toLowerCase()) ||
-    n.content.toLowerCase().includes(search.toLowerCase())
-  )
+  const sortedFiltered = useMemo(() => {
+    const filtered = notes.filter((n) =>
+      n.title.toLowerCase().includes(search.toLowerCase()) ||
+      stripHtml(n.content).toLowerCase().includes(search.toLowerCase())
+    )
+    return [...filtered].sort((a, b) => {
+      if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1
+      switch (sort) {
+        case 'newest': return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        case 'oldest': return new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime()
+        case 'az': return a.title.localeCompare(b.title)
+        case 'za': return b.title.localeCompare(a.title)
+        default: return 0
+      }
+    })
+  }, [notes, search, sort])
 
   const createNote = async () => {
     setCreating(true)
@@ -54,6 +71,13 @@ export default function NotebookView({ notebook, initialNotes }: Props) {
     setNotes(prev => prev.filter(n => n.id !== noteId))
   }
 
+  const sortLabels: Record<SortOption, string> = {
+    newest: 'Terbaru',
+    oldest: 'Terlama',
+    az: 'A–Z',
+    za: 'Z–A',
+  }
+
   return (
     <div className="h-full flex flex-col animate-fade-in">
       {/* Header */}
@@ -79,22 +103,33 @@ export default function NotebookView({ notebook, initialNotes }: Props) {
           </button>
         </div>
 
-        {/* Search */}
-        <div className="relative mt-4">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari catatan..."
-            className="input-field pl-9 text-sm"
-          />
+        {/* Search & Sort */}
+        <div className="flex gap-2 mt-4">
+          <div className="relative flex-1">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari catatan..."
+              className="input-field pl-9 text-sm w-full"
+            />
+          </div>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortOption)}
+            className="input-field text-sm px-3 w-32 cursor-pointer"
+          >
+            {(Object.keys(sortLabels) as SortOption[]).map((k) => (
+              <option key={k} value={k}>{sortLabels[k]}</option>
+            ))}
+          </select>
         </div>
       </div>
 
       {/* Notes grid */}
       <div className="flex-1 overflow-auto p-6">
-        {filtered.length === 0 ? (
+        {sortedFiltered.length === 0 ? (
           <div className="text-center py-16">
             <FileText size={40} className="text-ink-200 mx-auto mb-3" />
             <p className="text-ink-400 mb-4">
@@ -108,7 +143,7 @@ export default function NotebookView({ notebook, initialNotes }: Props) {
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((note, i) => (
+            {sortedFiltered.map((note, i) => (
               <Link
                 key={note.id}
                 href={`/dashboard/notebook/${notebook.id}/note/${note.id}`}
@@ -124,7 +159,7 @@ export default function NotebookView({ notebook, initialNotes }: Props) {
                   </h3>
                   {note.content && (
                     <p className="text-ink-400 text-sm line-clamp-3 leading-relaxed">
-                      {note.content}
+                      {stripHtml(note.content)}
                     </p>
                   )}
                 </div>

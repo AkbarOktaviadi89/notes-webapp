@@ -1,11 +1,17 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import Placeholder from '@tiptap/extension-placeholder'
+import Underline from '@tiptap/extension-underline'
 import { createClient } from '@/lib/supabase/client'
 import { Note, Notebook, NoteAttachment } from '@/types'
 import {
-  ArrowLeft, Pin, PinOff, Paperclip, Image as ImageIcon, Loader2,
-  Trash2, Download, FileText, X, Save, Check
+  ArrowLeft, Pin, PinOff, Paperclip, Loader2,
+  Trash2, Download, FileText, X, Check,
+  Bold, Italic, Underline as UnderlineIcon,
+  List, ListOrdered, Code, Minus, Quote
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
@@ -17,6 +23,118 @@ import NextImage from 'next/image'
 interface Props {
   note: Note & { note_attachments: NoteAttachment[] }
   notebook: Notebook
+}
+
+type Editor = NonNullable<ReturnType<typeof useEditor>>
+
+function ToolbarBtn({
+  onClick, active, title, children,
+}: {
+  onClick: () => void
+  active?: boolean
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onMouseDown={(e) => { e.preventDefault(); onClick() }}
+      title={title}
+      className={`p-1.5 rounded text-sm transition-colors ${
+        active
+          ? 'bg-ink-800 text-paper-100'
+          : 'text-ink-500 hover:bg-paper-200 hover:text-ink-800'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function Toolbar({ editor }: { editor: Editor }) {
+  return (
+    <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-paper-200 bg-paper-50">
+      <ToolbarBtn
+        onClick={() => editor.chain().focus().toggleBold().run()}
+        active={editor.isActive('bold')}
+        title="Tebal (Ctrl+B)"
+      >
+        <Bold size={14} />
+      </ToolbarBtn>
+      <ToolbarBtn
+        onClick={() => editor.chain().focus().toggleItalic().run()}
+        active={editor.isActive('italic')}
+        title="Miring (Ctrl+I)"
+      >
+        <Italic size={14} />
+      </ToolbarBtn>
+      <ToolbarBtn
+        onClick={() => editor.chain().focus().toggleUnderline().run()}
+        active={editor.isActive('underline')}
+        title="Garis bawah (Ctrl+U)"
+      >
+        <UnderlineIcon size={14} />
+      </ToolbarBtn>
+
+      <span className="w-px h-4 bg-paper-300 mx-1" />
+
+      <ToolbarBtn
+        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+        active={editor.isActive('heading', { level: 1 })}
+        title="Judul 1"
+      >
+        <span className="font-bold text-xs leading-none">H1</span>
+      </ToolbarBtn>
+      <ToolbarBtn
+        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+        active={editor.isActive('heading', { level: 2 })}
+        title="Judul 2"
+      >
+        <span className="font-bold text-xs leading-none">H2</span>
+      </ToolbarBtn>
+
+      <span className="w-px h-4 bg-paper-300 mx-1" />
+
+      <ToolbarBtn
+        onClick={() => editor.chain().focus().toggleBulletList().run()}
+        active={editor.isActive('bulletList')}
+        title="Daftar poin"
+      >
+        <List size={14} />
+      </ToolbarBtn>
+      <ToolbarBtn
+        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        active={editor.isActive('orderedList')}
+        title="Daftar bernomor"
+      >
+        <ListOrdered size={14} />
+      </ToolbarBtn>
+
+      <span className="w-px h-4 bg-paper-300 mx-1" />
+
+      <ToolbarBtn
+        onClick={() => editor.chain().focus().toggleCode().run()}
+        active={editor.isActive('code')}
+        title="Kode inline"
+      >
+        <Code size={14} />
+      </ToolbarBtn>
+      <ToolbarBtn
+        onClick={() => editor.chain().focus().toggleBlockquote().run()}
+        active={editor.isActive('blockquote')}
+        title="Kutipan"
+      >
+        <Quote size={14} />
+      </ToolbarBtn>
+      <ToolbarBtn
+        onClick={() => editor.chain().focus().setHorizontalRule().run()}
+        active={false}
+        title="Garis pemisah"
+      >
+        <Minus size={14} />
+      </ToolbarBtn>
+    </div>
+  )
 }
 
 export default function NoteEditor({ note, notebook }: Props) {
@@ -32,6 +150,19 @@ export default function NoteEditor({ note, notebook }: Props) {
   const saveTimerRef = useRef<NodeJS.Timeout>()
   const router = useRouter()
   const supabase = createClient()
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      Placeholder.configure({ placeholder: 'Mulai menulis catatanmu di sini...' }),
+    ],
+    content: note.content,
+    immediatelyRender: false,
+    onUpdate: ({ editor }) => {
+      setContent(editor.getHTML())
+    },
+  })
 
   // Auto-save
   useEffect(() => {
@@ -201,7 +332,7 @@ export default function NoteEditor({ note, notebook }: Props) {
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Judul catatan..."
             rows={1}
-            className="w-full font-display text-3xl text-ink-900 bg-transparent border-none outline-none resize-none mb-6 placeholder-ink-200"
+            className="w-full font-display text-3xl text-ink-900 bg-transparent border-none outline-none resize-none mb-4 placeholder-ink-200"
             style={{ lineHeight: '1.3' }}
             onInput={(e) => {
               const el = e.target as HTMLTextAreaElement
@@ -210,20 +341,12 @@ export default function NoteEditor({ note, notebook }: Props) {
             }}
           />
 
-          {/* Content */}
-          <div className="relative">
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Mulai menulis catatanmu di sini..."
-              className="w-full note-content bg-transparent border-none outline-none resize-none font-body leading-8"
-              rows={20}
-              onInput={(e) => {
-                const el = e.target as HTMLTextAreaElement
-                el.style.height = 'auto'
-                el.style.height = el.scrollHeight + 'px'
-              }}
-            />
+          {/* Rich text editor */}
+          <div className="border border-paper-300 rounded-lg overflow-hidden">
+            {editor && <Toolbar editor={editor} />}
+            <div className="px-4 py-3">
+              <EditorContent editor={editor} />
+            </div>
           </div>
 
           {/* Attachments */}
